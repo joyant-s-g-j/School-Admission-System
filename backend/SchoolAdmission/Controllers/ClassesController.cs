@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SchoolAdmission.Data;
+using SchoolAdmission.DTOs;
+using SchoolAdmission.Models;
 
 namespace SchoolAdmission.Controllers;
 
@@ -12,5 +14,35 @@ public class ClassesController: ControllerBase
     public ClassesController(ApplicationDbContext context)
     {
         _context = context;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateClass(CreateClassRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest(new { message = "Class name is required." });
+        }
+
+        if (request.TotalSeats <= 0)
+        {
+            return BadRequest(new { message = "Total seats must be greater than zero" });
+        }
+
+        var schoolClass = new SchoolClass
+        {
+            Name = request.Name.Trim(),
+            TotalSeats = request.TotalSeats
+        };
+
+        _context.Classes.Add(schoolClass);
+
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(
+            nameof(CreateClass),
+            new { id = schoolClass.Id },
+            schoolClass
+        );
     }
 }
