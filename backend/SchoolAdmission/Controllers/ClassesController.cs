@@ -86,4 +86,45 @@ public class ClassesController: ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("{classId:guid}")]
+    public async Task<IActionResult> GetClass(Guid classId)
+    {
+        var now = DateTime.UtcNow;
+
+        var schoolClass = await _context.Classes
+            .Where(c => c.Id == classId)
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.TotalSeats,
+
+                HeldSeats = _context.Holds.Count(h => 
+                    h.ClassId == c.Id &&
+                    h.Status == "HELD" &&
+                    h.ExpiresAt > now
+                ),
+
+                ConfirmedSeats = _context.Holds.Count(h =>
+                    h.ClassId == c.Id &&
+                    h.Status == "CONFIRMED"
+                )
+            }).FirstOrDefaultAsync();
+
+        if (schoolClass == null)
+        {
+            return NotFound(new { message = "Class not found." });
+        }
+
+        return Ok(new
+        {
+            schoolClass.Id,
+            schoolClass.Name,
+            schoolClass.TotalSeats,
+            schoolClass.HeldSeats,
+            schoolClass.ConfirmedSeats,
+            AvailableSeats = schoolClass.TotalSeats - schoolClass.HeldSeats - schoolClass.ConfirmedSeats
+        });
+    }
 }
