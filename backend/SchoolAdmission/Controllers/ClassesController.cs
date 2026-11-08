@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SchoolAdmission.Data;
 using SchoolAdmission.DTOs;
 using SchoolAdmission.Models;
@@ -16,6 +17,7 @@ public class ClassesController: ControllerBase
         _context = context;
     }
 
+    // POST / classes
     [HttpPost]
     public async Task<IActionResult> CreateClass(CreateClassRequest request)
     {
@@ -44,5 +46,20 @@ public class ClassesController: ControllerBase
             new { id = schoolClass.Id },
             schoolClass
         );
+    }
+
+    // GET / classes
+    [HttpGet]
+    public async Task<IActionResult> GetClasses()
+    {
+        var classes = await _context.Classes
+            .Select(schoolClass => new
+            {
+              schoolClass.Id,
+              schoolClass.Name,
+              schoolClass.TotalSeats  
+            }).ToListAsync();
+
+        return Ok(classes);
     }
 }
