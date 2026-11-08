@@ -12,9 +12,12 @@ public class ClassesController: ControllerBase
 {
     private readonly ApplicationDbContext _context;
 
-    public ClassesController(ApplicationDbContext context)
+    private readonly IConfiguration _configuration;
+
+    public ClassesController(ApplicationDbContext context, IConfiguration configuration)
     {
         _context = context;
+        _configuration = configuration;
     }
 
     // POST / classes
@@ -87,6 +90,7 @@ public class ClassesController: ControllerBase
         return Ok(result);
     }
 
+    // POST classes/{classId}
     [HttpGet("{classId:guid}")]
     public async Task<IActionResult> GetClass(Guid classId)
     {
@@ -125,6 +129,120 @@ public class ClassesController: ControllerBase
             schoolClass.HeldSeats,
             schoolClass.ConfirmedSeats,
             AvailableSeats = schoolClass.TotalSeats - schoolClass.HeldSeats - schoolClass.ConfirmedSeats
+        });
+    }
+
+    // Post classes/classId/holds
+    [HttpPost("{classId:guid}/holds")]
+    public async Task<IActionResult> CreateHold(Guid classId)
+    {
+        // read student id
+        var studentId = Request.Headers["X-Student-Id"].ToString();
+
+        if (studentId.Length != 17 || !studentId.All(char.IsDigit))
+        {
+            return BadRequest(new 
+            {  
+                message = "A valid 17-digit birth registration number is required,"
+            });
+        }
+
+        // read hold duration
+        var holdDuration = _configuration
+            .GetValue<int?>("HOLD_DURATION_SECONDS") ?? 600;
+
+        if (holdDuration <= 0)
+        {
+            return StatusCode(500, new
+            {
+                message = "Invalid hold duration configuration"
+            });
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        var now = DateTime.UtcNow;
+
+        var schoolClass = await _context.Classes
+            .FromSqlInterpolated(
+                $"SELECT * FROM \"Classes\" WHERE \"Id\" = {classId} FOR UPDATE" 
+            ).FirstOrDefaultAsync();
+
+        if (schoolClass == null)
+        {
+            return NotFound(new { message = "Class not found."});
+        }
+
+        var expiredHolds = await _context.Holds
+            .Where(h => 
+                h.ClassId == classId &&
+                h.Status == "HELD" &&
+                h.ExpiresAt <= now
+            ).ToListAsync();
+
+        foreach (var hold in expiredHolds)
+        {
+            hold.Status = "EXPIRED";
+        }
+
+        var existingAdmission = await _context.Holds
+            .AnyAsync(h => 
+                h.ClassId == classId &&
+                h.StudentId == studentId &&
+                (
+                    h.Status == "CONFIRMED" || 
+                    (h.Status == "HELD" && h.ExpiresAt > now)
+                )
+            );
+
+        if (existingAdmission)
+        {
+            return Conflict(new
+            {
+                message = "You already have an active hold or confirmed admission for this class."
+            });
+        }
+
+        var occupiedSeats = await _context.Holds
+            .CountAsync(h =>
+                h.ClassId == classId &&
+                (
+                    h.Status == "CONFIRMED" ||
+                    (h.Status == "HELD" && h.ExpiresAt > now)
+                )
+            );
+
+        if (occupiedSeats >= schoolClass.TotalSeats)
+        {
+            return Conflict(new
+            {
+                message = "No seats are currenty available."
+            });
+        }
+
+        var newHold = new AdmissionHold
+        {
+            ClassId = classId,
+            StudentId = studentId,
+            CreatedAt = now,
+            ExpiresAt = now.AddSeconds(holdDuration),
+            Status = "HELD"
+        };
+
+        _context.Holds.Add(newHold);
+
+        await _context.SaveChangesAsync();
+
+        await transaction.CommitAsync();
+
+        return StatusCode(201, new
+        {
+            newHold.Id,
+            newHold.ClassId,
+            newHold.StudentId,
+            newHold.CreatedAt,
+            newHold.ExpiresAt,
+            newHold.Status
         });
     }
 }
