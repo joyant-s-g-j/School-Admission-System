@@ -84,6 +84,6 @@ public class ClassesController: ControllerBase
             AvailableSeats = schoolClass.TotalSeats - schoolClass.HeldSeats - schoolClass.confirmedSeats
         });
 
-        return Ok(classes);
+        return Ok(result);
     }
 }
