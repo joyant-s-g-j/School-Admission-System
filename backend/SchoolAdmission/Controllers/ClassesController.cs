@@ -52,13 +52,37 @@ public class ClassesController: ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetClasses()
     {
+        var now = DateTime.UtcNow;
+
         var classes = await _context.Classes
             .Select(schoolClass => new
             {
               schoolClass.Id,
               schoolClass.Name,
-              schoolClass.TotalSeats  
+              schoolClass.TotalSeats,
+
+              HeldSeats = _context.Holds.Count(hold => 
+                hold.ClassId == schoolClass.Id &&
+                hold.Status == "HELD" &&
+                hold.ExpiresAt > now
+              ),
+
+              confirmedSeats = _context.Holds.Count(hold =>
+                hold.ClassId == schoolClass.Id &&
+                hold.Status == "CONFIRMED"
+              )
             }).ToListAsync();
+
+        var result = classes.Select(schoolClass => new
+        {
+            schoolClass.Id,
+            schoolClass.Name,
+            schoolClass.TotalSeats,
+            schoolClass.HeldSeats,
+            schoolClass.confirmedSeats,
+
+            AvailableSeats = schoolClass.TotalSeats - schoolClass.HeldSeats - schoolClass.confirmedSeats
+        });
 
         return Ok(classes);
     }
