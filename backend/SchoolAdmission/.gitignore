@@ -1,0 +1,212 @@
+
+# ==========================================
+# UNIVERSAL GITIGNORE
+# ==========================================
+
+# ---- Environment & Secrets ----
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+secrets.json
+
+# ---- Dependencies ----
+node_modules/
+vendor/
+packages/
+.pnpm-store/
+bower_components/
+
+# ---- Build & Distribution ----
+dist/
+build/
+out/
+target/
+bin/
+obj/
+publish/
+release/
+debug/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# ---- Frameworks & Caches ----
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+.angular/
+.parcel-cache/
+.turbo/
+.cache/
+.eslintcache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.pytype/
+
+# ---- Python ----
+venv/
+.venv/
+ENV/
+env/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+wheels/
+
+# ---- Java / Kotlin / Gradle ----
+.gradle/
+.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
+
+# ---- .NET / ASP.NET ----
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+
+# ---- C / C++ ----
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+
+# ---- Go ----
+vendor/
+*.test
+*.out
+
+# ---- Rust ----
+/target/
+
+# ---- PHP / Laravel ----
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+
+# ---- Flutter / Dart ----
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+.flutter-versions
+
+# ---- Android / iOS ----
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+Pods/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# ---- IDEs & Editors ----
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# ---- Databases & Backups ----
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+*.backup
+*.sql.gz
+
+# ---- Logs & Temporary Files ----
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.temp
+*.pid
+*.seed
+
+# ---- Testing ----
+test-results/
+playwright-report/
+.nyc_output/
+junit.xml
+coverage.xml
+htmlcov/
+
+# ---- Docker ----
+.docker/
+
+# ---- Terraform / Infrastructure ----
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# ---- Serverless ----
+.serverless/
+.aws-sam/
+
+# ---- OS Generated Files ----
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Thumbs.db:encryptable
+desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100/
+.Trashes/
+
+# ---- Package Managers ----
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---- Generated Documentation ----
+site/
+.sphinx-build/
+doc/_build/
+
+# ---- Miscellaneous ----
+*.orig
+*.rej
+*.stackdump
+*.sw?
+```
