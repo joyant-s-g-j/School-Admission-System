@@ -152,4 +152,88 @@ public class HoldsController: ControllerBase
             hold.ConfirmedAt
         });
     }
+
+    [HttpDelete("{holdId:guid}")]
+    public async Task<IActionResult> CancelHold(Guid holdId)
+    {
+        var studentId = Request.Headers["X-Student-Id"].ToString();
+
+        if (studentId.Length != 17 ||
+            !studentId.All(char.IsDigit)
+        )
+        {
+            return BadRequest(new
+            {
+                message = "A valid 17-digit birth registration number is required."
+            });
+        }
+
+        var existingHold = await _context.Holds
+            .AsNoTracking()
+            .FirstOrDefaultAsync(h =>
+                h.Id == holdId &&
+                h.StudentId == studentId
+            );
+
+        if (existingHold == null)
+        {
+            return NotFound(new
+            {
+                message = "Hold not found."
+            });
+        }
+
+        await using var transaction =
+            await _context.Database.BeginTransactionAsync();
+
+        var schoolClass = await _context.Classes
+            .FromSqlInterpolated(
+                $"SELECT * FROM \"Classes\" WHERE \"Id\" = {existingHold.ClassId} FOR UPDATE"
+            ).FirstOrDefaultAsync();
+
+        if (schoolClass == null)
+        {
+            return NotFound(new
+            {
+                message = "Class not found."
+            });
+        }
+
+        var hold = await _context.Holds
+            .FirstAsync(h => h.Id == holdId);
+
+        if (hold.Status != "HELD")
+        {
+            return Conflict(new
+            {
+                message = "Only active holds can be cancelled."
+            });
+        }
+
+        if (hold.ExpiresAt <= DateTime.UtcNow)
+        {
+            hold.Status = "EXPIRED";
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Conflict(new
+            {
+                message = "This hold has already expired."
+            });
+        }
+
+        hold.Status = "CANCELLED";
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return Ok(new
+        {
+            hold.Id,
+            hold.ClassId,
+            hold.StudentId,
+            hold.Status
+        });
+    }
 }
