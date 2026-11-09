@@ -1,61 +1,42 @@
-import { useEffect, useState } from "react";
-
-interface SchoolClass {
-  id: string;
-  name: string;
-  totalSeats: number;
-  heldSeats: number;
-  confirmedSeats: number;
-  availableSeats: number;
-}
+import { useState } from "react";
+import { ClassList, Navbar, StudentInformation } from "./components";
+import { useClasses } from "./hooks/useClasses";
 
 function App() {
-  const [classes, setClasses] = useState<SchoolClass[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { classes, loading, error } = useClasses();
   const [studentId, setStudentId] = useState("");
-
-  useEffect(() => {
-    const fetchClasses = async () => {
-      try {
-        const response = await fetch("http://localhost:8080/classes")
-
-        if (!response.ok) {
-          throw new Error("Faild to fetch classes");
-        }
-
-        const data: SchoolClass[] = await response.json();
-        setClasses(data);
-      } catch {
-        setError("Could not load classes.")
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchClasses();
-  }, [])
-
-  const isValidStudentId = /^[0-9]{17}$/.test(studentId);
   return (
-    <div>
-      <h1>School Admission System</h1>
+    <div className="min-h-screen bg-slate-50 text-slate-500">
+      <Navbar />
 
-      <div>
-        <h2>Student Information</h2>
-        {classes.length === 0 ? (
-          <p>No classes available</p>
-        ) : (
-          classes.map((schoolClass) => (
-            <div key={schoolClass.id}>
-              <h3>{schoolClass.name}</h3>
-              <p>Total Seats: {schoolClass.totalSeats}</p>
-              <p>Held Seats: {schoolClass.heldSeats}</p>
-              <p>Confirmed Seats: {schoolClass.confirmedSeats}</p>
-              <p>Available Seats: {schoolClass.availableSeats}</p>
-            </div>
-          ))
-        )}
-      </div>
+      <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+        <div className="mb-8">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-600">
+            Welcome to the admission portal
+          </p>
+
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            School Admission System
+          </h2>
+
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+            Enter your birth registration number and explore available
+            classes to apply for admission.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <StudentInformation 
+            studentId={studentId}
+            setStudentId={setStudentId}
+          />
+          <ClassList 
+            classes={classes}
+            loading={loading}
+            error={error}
+          />
+        </div>
+      </main>
     </div>
   )
 }
