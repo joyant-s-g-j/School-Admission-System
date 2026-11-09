@@ -236,4 +236,43 @@ public class HoldsController: ControllerBase
             hold.Status
         });
     }
+
+    [HttpGet("~/me/holds")]
+    public async Task<IActionResult> GetMyHolds()
+    {
+        var studentId = Request.Headers["X-Student-Id"].ToString();
+
+        if (studentId.Length != 17 ||
+            !studentId.All(char.IsDigit)
+        )
+        {
+            return BadRequest(new
+            {
+                message = "A valid 17-digit birth registration number is required."
+            });
+        }
+
+        var holds = await _context.Holds
+            .Join(
+                _context.Classes,
+                hold => hold.ClassId,
+                schoolClass => schoolClass.Id,
+                (hold, schoolClass) => new
+                {
+                    hold.Id,
+                    hold.ClassId,
+                    ClassName = schoolClass.Name,
+                    hold.StudentId,
+                    hold.CreatedAt,
+                    hold.ExpiresAt,
+                    hold.Status,
+                    hold.ConfirmedAt
+                }
+            )
+            .Where(h => h.StudentId == studentId)
+            .OrderByDescending(h => h.CreatedAt)
+            .ToListAsync();
+        
+        return Ok(holds);
+    }
 }
