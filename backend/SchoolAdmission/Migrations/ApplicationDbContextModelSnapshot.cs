@@ -40,22 +40,32 @@ namespace SchoolAdmission.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("SchoolClassId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("StudentId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(17)
+                        .HasColumnType("character varying(17)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SchoolClassId");
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("IX_Holds_StudentId");
 
-                    b.ToTable("Holds");
+                    b.HasIndex("ClassId", "StudentId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Holds_ActiveAdmission")
+                        .HasFilter("\"Status\" IN ('HELD', 'CONFIRMED')");
+
+                    b.ToTable("Holds", t =>
+                        {
+                            t.HasCheckConstraint("CK_HOlds_StudentId", "\"StudentId\" ~ '^[0-9]{17}$'");
+
+                            t.HasCheckConstraint("CK_Holds_Status", "\"Status\" IN ('HELD', 'CONFIRMED', 'EXPIRED', 'CANCELLED')");
+                        });
                 });
 
             modelBuilder.Entity("SchoolAdmission.Models.SchoolClass", b =>
@@ -69,21 +79,27 @@ namespace SchoolAdmission.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("TotalSeats")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Classes");
+                    b.ToTable("Classes", t =>
+                        {
+                            t.HasCheckConstraint("CK_Classes_TotalSeats", "\"TotalSeats\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("SchoolAdmission.Models.AdmissionHold", b =>
                 {
                     b.HasOne("SchoolAdmission.Models.SchoolClass", "SchoolClass")
                         .WithMany()
-                        .HasForeignKey("SchoolClassId");
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("SchoolClass");
                 });
