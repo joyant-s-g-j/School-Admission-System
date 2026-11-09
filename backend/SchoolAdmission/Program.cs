@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SchoolAdmission.Data;
+using SchoolAdmission.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 );
 
 builder.Services.AddOpenApi();
+builder.Services.AddHostedService<HoldExpirationService>();
 
 var app = builder.Build();
 
