@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SchoolClass, StudentHold } from "../types";
 
 interface UseAdmissionProps {
@@ -18,9 +18,24 @@ export function useAdmission({
   const [myApplications, setMyApplications] = useState<StudentHold[]>([]);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
 
+  const [currentTime, setCurrentTime] = useState<number>(0);
+
   const requestId = useRef(0);
 
+  const autoRefreshInProgress = useRef(false);
+
   const isValidStudentId = /^[0-9]{17}$/.test(studentId);
+
+  useEffect(() => {
+    const updateTime = () => {
+        setCurrentTime(Date.now())
+    }
+    updateTime();
+
+    const timer = setInterval(updateTime, 1000)
+    
+    return () => clearInterval(timer)
+  }, [])
 
   const fetchMyApplications = useCallback(async (id: string) => {
     if (!/^[0-9]{17}$/.test(id)) {
@@ -134,6 +149,60 @@ export function useAdmission({
     [studentId, classes, refreshClasses, fetchMyApplications]
   );
 
+  const getRemainingTime = useCallback((expiresAt: string) => {
+    const expiryTime = new Date(expiresAt).getTime();
+    const remaining = Number.isNaN(expiryTime)
+        ? 0
+        : Math.max(0, expiryTime - currentTime);
+
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000)
+
+    return {
+        remaining,
+        formatted: `${String(minutes).padStart(2, "0")}:${String(
+            seconds
+        ).padStart(2, "0")}`,
+    };
+  },
+  [currentTime]
+ )
+
+ useEffect(() => {
+    if (!isValidStudentId) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const hasExpiredHold = myApplications.some(
+        (application) =>
+          application.status === "HELD" &&
+          new Date(application.expiresAt).getTime() <= Date.now()
+      );
+
+      if (!hasExpiredHold || autoRefreshInProgress.current) {
+        return;
+      }
+
+      autoRefreshInProgress.current = true;
+
+      void Promise.all([
+        fetchMyApplications(studentId),
+        refreshClasses(),
+      ]).finally(() => {
+        autoRefreshInProgress.current = false;
+      });
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [
+    isValidStudentId,
+    studentId,
+    myApplications,
+    fetchMyApplications,
+    refreshClasses,
+  ]);
+
   return {
     studentId,
     updateStudentId,
@@ -144,5 +213,6 @@ export function useAdmission({
     myApplications,
     applicationsLoading,
     handleApply,
+    getRemainingTime
   };
 }

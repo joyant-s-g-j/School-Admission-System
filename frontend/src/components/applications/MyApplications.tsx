@@ -6,13 +6,18 @@ interface MyApplicationsProps {
     classes: SchoolClass[];
     loading: boolean;
     isValidStudentId: boolean;
+    getRemainingTime: (expiresAt: string) => {
+        remaining: number;
+        formatted: string;
+    };
 }
 
 const MyApplications = ({
     applications,
     classes,
     loading,
-    isValidStudentId
+    isValidStudentId,
+    getRemainingTime
 }: MyApplicationsProps) => {
   const getStatusStyle = (status: StudentHold["status"]) => {
     switch (status) {
@@ -75,9 +80,10 @@ const MyApplications = ({
         <div className="grid gap-4 md:grid-cols-2">
             {applications.map((application) => {
                 const selectedClass = classes.find(
-                (schoolClass) =>
-                    schoolClass.id === application.classId
+                    (schoolClass) => schoolClass.id === application.classId
                 );
+
+                const remainingTime = getRemainingTime(application.expiresAt)
 
                 return (
                     <div
@@ -147,6 +153,27 @@ const MyApplications = ({
                                 </div>
                             )}
                         </div>
+
+                        {application.status === "HELD" && (
+                            <div className='mt-4 rouned-xl bg-amber-50 p-4'>
+                                <p className='text-xs font-medium text-amber-700'>
+                                    Time remaining
+                                </p>
+                                <p className='mt-1 text-2xl font-bold tabular-nums text-amber-700'>
+                                    {remainingTime.formatted}
+                                </p>
+
+                                {remainingTime.remaining === 0 ? (
+                                    <p className='mt-1 text-xs text-red-600'>
+                                        Hold expired. Refreshing application status...
+                                    </p>
+                                ): (
+                                    <p className="mt-1 text-xs text-amber-700">
+                                        Time remaining to complete admission.
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 );
             })}
