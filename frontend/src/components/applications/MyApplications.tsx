@@ -10,6 +10,9 @@ interface MyApplicationsProps {
         remaining: number;
         formatted: string;
     };
+    handlePayment: (holdId: string) => void;
+    handleCancel: (holdId: string) => void;
+    processingHoldId: string | null;
 }
 
 const MyApplications = ({
@@ -17,7 +20,10 @@ const MyApplications = ({
     classes,
     loading,
     isValidStudentId,
-    getRemainingTime
+    getRemainingTime,
+    handlePayment,
+    handleCancel,
+    processingHoldId,
 }: MyApplicationsProps) => {
   const getStatusStyle = (status: StudentHold["status"]) => {
     switch (status) {
@@ -174,6 +180,42 @@ const MyApplications = ({
                                 )}
                             </div>
                         )}
+
+                        {application.status === "HELD" &&
+                            getRemainingTime(application.expiresAt).remaining > 0 && (
+                                <button
+                                    type="button"
+                                    disabled={processingHoldId === application.id}
+                                    onClick={() => handlePayment(application.id)}
+                                    className="mt-4 w-full rounded-xl bg-green-600 cursor-pointer px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                {processingHoldId === application.id
+                                    ? "Processing..."
+                                    : "Pay Admission Fee"}
+                                </button>
+                            )
+                        }
+
+                        {application.status === "CONFIRMED" && (
+                            <div className="mt-4 rounded-xl bg-green-50 p-3 text-center text-sm font-semibold text-green-700">
+                                <span>✓ Admission Confirmed</span>
+                            </div>
+                        )}
+
+                        {application.status === "HELD" &&
+                            getRemainingTime(application.expiresAt).remaining > 0 && (
+                                <button
+                                    type="button"
+                                    disabled={processingHoldId === application.id}
+                                    onClick={() => handleCancel(application.id)}
+                                    className="mt-2 w-full rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {processingHoldId === application.id
+                                        ? "Processing..."
+                                        : "Cancel Application"}
+                                </button>
+                            )
+                        }
                     </div>
                 );
             })}

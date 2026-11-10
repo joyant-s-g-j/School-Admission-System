@@ -25,39 +25,12 @@ export function useClasses() {
   }, []);
 
   useEffect(() => {
-    let ignore = false;
+    const intervalId = setInterval(() => {
+        void refreshClasses()
+    }, 5000)
 
-    async function fetchClasses() {
-        try {
-            const response = await fetch("http://localhost:8080/classes");
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch classes");
-            }
-
-            const data: SchoolClass[] = await response.json();
-
-            if (!ignore) {
-                setClasses(data);
-                setError("");
-            }
-        } catch {
-            if (!ignore) {
-                setError("Could not load classes.");
-            }
-        } finally {
-            if (!ignore) {
-                setLoading(false);
-            }
-        }
-        }
-
-        fetchClasses();
-
-        return () => {
-            ignore = true;
-        };
-  }, []);
+    return () => clearInterval(intervalId)
+  }, [refreshClasses])
     
 
   return { classes, loading, error, refreshClasses}

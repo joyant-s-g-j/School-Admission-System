@@ -15,6 +15,9 @@ function App() {
     applicationsLoading,
     handleApply,
     getRemainingTime,
+    handlePayment,
+    handleCancel,
+    processingHoldId,
   } = useAdmission({ classes, refreshClasses })
   return (
     <div className="min-h-screen bg-slate-50 text-slate-500">
@@ -58,6 +61,9 @@ function App() {
             loading={applicationsLoading}
             isValidStudentId={isValidStudentId}
             getRemainingTime={getRemainingTime}
+            handlePayment={handlePayment}
+            handleCancel={handleCancel}
+            processingHoldId={processingHoldId}
           />
         </div>
 

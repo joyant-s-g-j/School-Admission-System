@@ -20,6 +20,8 @@ export function useAdmission({
 
   const [currentTime, setCurrentTime] = useState<number>(0);
 
+  const [processingHoldId, setProcessingHoldId] = useState<string | null>(null);
+
   const requestId = useRef(0);
 
   const autoRefreshInProgress = useRef(false);
@@ -37,7 +39,7 @@ export function useAdmission({
     return () => clearInterval(timer)
   }, [])
 
-  const fetchMyApplications = useCallback(async (id: string) => {
+  const fetchMyApplications = useCallback(async (id: string, silent = false) => {
     if (!/^[0-9]{17}$/.test(id)) {
       setMyApplications([]);
       setApplicationsLoading(false);
@@ -46,7 +48,9 @@ export function useAdmission({
 
     const currentRequest = ++requestId.current;
 
-    setApplicationsLoading(true);
+    if (!silent) {
+        setApplicationsLoading(true);
+    }
 
     try {
       const response = await fetch("http://localhost:8080/me/holds", {
@@ -67,10 +71,9 @@ export function useAdmission({
     } catch (err) {
       if (currentRequest === requestId.current) {
         console.error("Could not load applications:", err);
-        setMyApplications([]);
       }
     } finally {
-      if (currentRequest === requestId.current) {
+      if (!silent && currentRequest === requestId.current) {
         setApplicationsLoading(false);
       }
     }
@@ -174,23 +177,14 @@ export function useAdmission({
     }
 
     const timer = setInterval(() => {
-      const hasExpiredHold = myApplications.some(
-        (application) =>
-          application.status === "HELD" &&
-          new Date(application.expiresAt).getTime() <= Date.now()
-      );
-
-      if (!hasExpiredHold || autoRefreshInProgress.current) {
+      if (autoRefreshInProgress.current) {
         return;
       }
 
       autoRefreshInProgress.current = true;
 
-      void Promise.all([
-        fetchMyApplications(studentId),
-        refreshClasses(),
-      ]).finally(() => {
-        autoRefreshInProgress.current = false;
+      void fetchMyApplications(studentId, true).finally(() => {
+        autoRefreshInProgress.current = false
       });
     }, 5000);
 
@@ -198,10 +192,118 @@ export function useAdmission({
   }, [
     isValidStudentId,
     studentId,
-    myApplications,
     fetchMyApplications,
-    refreshClasses,
   ]);
+
+  const handlePayment = useCallback(
+    async (holdId: string) => {
+        if (!isValidStudentId || processingHoldId) return;
+
+        setApplicationError("");
+        setApplicationMessage("");
+        setProcessingHoldId(holdId);
+
+        try {
+            const response = await fetch(
+                `http://localhost:8080/holds/${holdId}/confirm`,
+                {
+                    method: "POST",
+                    headers: {
+                        "X-Student-Id": studentId,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || "Payment failed.");
+            }
+
+            setApplicationMessage(
+                "Payment successful! Admission confirmed."
+            );
+
+            await Promise.all([
+                fetchMyApplications(studentId),
+                refreshClasses(),
+            ]);
+        } catch (err) {
+            setApplicationError(
+                err instanceof Error ? err.message : "Payment failed."
+            );
+
+            await Promise.all([
+                fetchMyApplications(studentId),
+                refreshClasses(),
+            ]);
+        } finally {
+            setProcessingHoldId(null);
+        }
+    },
+    [
+        studentId,
+        isValidStudentId,
+        processingHoldId,
+        fetchMyApplications,
+        refreshClasses,
+    ]
+  );
+
+  const handleCancel = useCallback(
+    async (holdId: string) => {
+        if (!isValidStudentId || processingHoldId) return;
+
+        setApplicationError("");
+        setApplicationMessage("");
+        setProcessingHoldId(holdId);
+
+        try {
+            const response = await fetch(
+                `http://localhost:8080/holds/${holdId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        "X-Student-Id": studentId,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || "Failed to cancel application.");
+            }
+
+            setApplicationMessage(
+                "Application cancelled successfully."
+            );
+
+            await Promise.all([
+                fetchMyApplications(studentId),
+                refreshClasses(),
+            ]);
+        } catch (err) {
+            setApplicationError(
+                err instanceof Error
+                ? err.message
+                : "Cancellation failed."
+            );
+
+            await Promise.all([
+                fetchMyApplications(studentId),
+                refreshClasses(),
+            ]);
+        } finally {
+            setProcessingHoldId(null);
+        }
+    },
+    [
+        studentId,
+        isValidStudentId,
+        processingHoldId,
+        fetchMyApplications,
+        refreshClasses,
+    ]
+  );
 
   return {
     studentId,
@@ -213,6 +315,9 @@ export function useAdmission({
     myApplications,
     applicationsLoading,
     handleApply,
-    getRemainingTime
+    getRemainingTime,
+    handlePayment,
+    handleCancel,
+    processingHoldId,
   };
 }
