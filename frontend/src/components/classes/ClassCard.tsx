@@ -3,9 +3,17 @@ import type { SchoolClass } from '../../types'
 
 interface ClassCardProps {
     schoolClass: SchoolClass;
+    isValidStudentId: boolean;
+    isApplying: boolean;
+    onApply: (classId: string) => void;
 }
 
-const ClassCard = ({schoolClass}: ClassCardProps) => {
+const ClassCard = ({
+    schoolClass,
+    isValidStudentId,
+    isApplying,
+    onApply
+}: ClassCardProps) => {
   const availabilityPercentage =
     schoolClass.totalSeats > 0
       ? (schoolClass.availableSeats / schoolClass.totalSeats) * 100
@@ -94,11 +102,16 @@ const ClassCard = ({schoolClass}: ClassCardProps) => {
 
         <button
             type="button"
-            disabled
-            className="mt-6 w-full cursor-not-allowed rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-400"
+            onClick={() => onApply(schoolClass.id)}
+            disabled={!isValidStudentId || !isAvailable || isApplying}
+            className={`mt-6 w-full cursor-pointer rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                !isValidStudentId || !isAvailable || isApplying
+                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
             title="Application functionality will be added next"
         >
-            Apply for Admission
+            {isApplying ? "Applying" : "Apply for Admission"}
         </button>
     </div>
   )

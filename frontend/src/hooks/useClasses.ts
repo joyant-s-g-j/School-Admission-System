@@ -1,15 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { SchoolClass } from "../types";
 
 export function useClasses() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [studentId, setStudentId] = useState("");
-
-  useEffect(() => {
-    const fetchClasses = async () => {
-      try {
+  
+  const refreshClasses = useCallback(async () => {
+    try {
         const response = await fetch("http://localhost:8080/classes")
 
         if (!response.ok) {
@@ -18,14 +16,49 @@ export function useClasses() {
 
         const data: SchoolClass[] = await response.json();
         setClasses(data);
-      } catch {
+        setError("");
+    } catch {
         setError("Could not load classes.")
-      } finally {
+    } finally {
         setLoading(false);
-      }
-    };
-    fetchClasses();
-  }, [])
+    }
+  }, []);
 
-  return { classes, loading, error}
+  useEffect(() => {
+    let ignore = false;
+
+    async function fetchClasses() {
+        try {
+            const response = await fetch("http://localhost:8080/classes");
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch classes");
+            }
+
+            const data: SchoolClass[] = await response.json();
+
+            if (!ignore) {
+                setClasses(data);
+                setError("");
+            }
+        } catch {
+            if (!ignore) {
+                setError("Could not load classes.");
+            }
+        } finally {
+            if (!ignore) {
+                setLoading(false);
+            }
+        }
+        }
+
+        fetchClasses();
+
+        return () => {
+            ignore = true;
+        };
+  }, []);
+    
+
+  return { classes, loading, error, refreshClasses}
 }

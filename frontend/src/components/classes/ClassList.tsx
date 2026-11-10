@@ -6,12 +6,22 @@ interface ClassListProps {
     classes: SchoolClass[];
     loading: boolean;
     error: string;
+    isValidStudentId: boolean;
+    applyingClassId: string | null;
+    applicationMessage: string;
+    applicationError: string;
+    onApply: (classId: string) => void;
 }
 
 const ClassList = ({
     classes,
     loading,
     error,
+    isValidStudentId,
+    applyingClassId,
+    applicationMessage,
+    applicationError,
+    onApply,
 }: ClassListProps) => {
   return (
     <section className='lg:col-span-2'>
@@ -50,6 +60,18 @@ const ClassList = ({
             </div>
         )}
 
+        {applicationMessage && (
+            <div className="mb-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                {applicationMessage}
+            </div>
+        )}
+
+        {applicationError && (
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {applicationError}
+            </div>
+        )}
+
         {!loading && !error && classes.length === 0 && (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">
@@ -84,6 +106,9 @@ const ClassList = ({
                     <ClassCard 
                         key={schoolClass.id}
                         schoolClass={schoolClass}
+                        isValidStudentId={isValidStudentId}
+                        isApplying={applyingClassId === schoolClass.id}
+                        onApply={onApply}
                     />
                 ))}
             </div>
