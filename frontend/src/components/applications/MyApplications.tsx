@@ -83,7 +83,7 @@ const MyApplications = ({
                 </p>
             </div>
         ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {applications.map((application) => {
                 const selectedClass = classes.find(
                     (schoolClass) => schoolClass.id === application.classId

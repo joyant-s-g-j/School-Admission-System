@@ -73,8 +73,8 @@ function App() {
                 applicationError={applicationError}
                 onApply={handleApply}
               />
-
-              <MyApplications 
+            </div>
+            <MyApplications 
                 applications={myApplications}
                 classes={classes}
                 loading={applicationsLoading}
@@ -84,7 +84,6 @@ function App() {
                 handleCancel={handleCancel}
                 processingHoldId={processingHoldId}
               />
-            </div>
           </>
         ) : (
           <AdminPanel 
