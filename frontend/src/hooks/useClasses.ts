@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SchoolClass } from "../types";
+import { API_BASE_URL } from "../config/api";
 
 export function useClasses() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
@@ -8,7 +9,7 @@ export function useClasses() {
   
   const refreshClasses = useCallback(async () => {
     try {
-        const response = await fetch("http://localhost:8080/classes")
+        const response = await fetch(`${API_BASE_URL}/classes`)
 
         if (!response.ok) {
           throw new Error("Faild to fetch classes");

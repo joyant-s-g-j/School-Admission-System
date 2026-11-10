@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE_URL } from "../config/api";
 
 interface UseAdminProps {
     refreshClasses: () => Promise<void>;
@@ -33,7 +34,7 @@ export function useAdmin({ refreshClasses }: UseAdminProps) {
         setCreating(true);
 
         try {
-            const response = await fetch("http://localhost:8080/classes", {
+            const response = await fetch(`${API_BASE_URL}/classes`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

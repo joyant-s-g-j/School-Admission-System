@@ -30,6 +30,18 @@ services:
       db:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
+    container_name: school-admission-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
 volumes:
   school_admission_data:
     name: school_admission_data

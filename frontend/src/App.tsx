@@ -53,10 +53,6 @@ function App() {
             School Admission System
           </h2>
 
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-            Enter your birth registration number and explore available
-            classes to apply for admission.
-          </p>
         </div>
 
         {currentScreen === "student" ? (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SchoolClass, StudentHold } from "../types";
+import { API_BASE_URL } from "../config/api";
 
 interface UseAdmissionProps {
   classes: SchoolClass[];
@@ -53,7 +54,7 @@ export function useAdmission({
     }
 
     try {
-      const response = await fetch("http://localhost:8080/me/holds", {
+      const response = await fetch(`${API_BASE_URL}/me/holds`, {
         headers: {
           "X-Student-Id": id,
         },
@@ -131,7 +132,7 @@ export function useAdmission({
 
       try {
         const response = await fetch(
-          `http://localhost:8080/classes/${classId}/holds`,
+          `${API_BASE_URL}/classes/${classId}/holds`,
           {
             method: "POST",
             headers: {
@@ -142,8 +143,29 @@ export function useAdmission({
         );
 
         if (!response.ok) {
-          const message = await response.text();
-          throw new Error(message || "Failed to apply for admission.");
+          const responseText = await response.text();
+
+          let errorMessage = responseText;
+
+          try {
+            const parsed = JSON.parse(responseText);
+
+            if (typeof parsed.message === "string") {
+              errorMessage = parsed.message;
+            } else if (Array.isArray(parsed.message)) {
+              errorMessage = parsed.message.join(", ");
+            }
+          } catch {
+            // Response is not JSON
+          }
+
+          if (errorMessage.includes(
+              "active hold or confirmed admission"
+            )
+          ) {
+            errorMessage = "You already have an application for this class. Please check Applications.";
+          }
+          throw new Error(errorMessage || "Failed to apply for admission.");
         }
 
         setApplicationMessage("Your seat has been held successfully!");
@@ -216,7 +238,7 @@ export function useAdmission({
 
         try {
             const response = await fetch(
-                `http://localhost:8080/holds/${holdId}/confirm`,
+                `${API_BASE_URL}/holds/${holdId}/confirm`,
                 {
                     method: "POST",
                     headers: {
@@ -270,7 +292,7 @@ export function useAdmission({
 
         try {
             const response = await fetch(
-                `http://localhost:8080/holds/${holdId}`,
+                `${API_BASE_URL}/holds/${holdId}`,
                 {
                     method: "DELETE",
                     headers: {
