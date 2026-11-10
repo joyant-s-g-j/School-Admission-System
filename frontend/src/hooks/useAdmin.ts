@@ -67,6 +67,7 @@ export function useAdmin({ refreshClasses }: UseAdminProps) {
         className,
         setClassName,
         totalSeats,
+        setTotalSeats,
         creating,
         successMessage,
         errorMessage,

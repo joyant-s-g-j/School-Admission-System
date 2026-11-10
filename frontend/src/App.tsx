@@ -1,8 +1,11 @@
-import { ClassList, Footer, MyApplications, Navbar, StudentInformation } from "./components";
+import { AdminPanel, ClassList, Footer, MyApplications, Navbar, StudentInformation } from "./components";
 import { useClasses } from "./hooks/useClasses";
 import { useAdmission } from "./hooks/useAdmission";
+import { useAdmin } from "./hooks/useAdmin";
+import { useState } from "react";
 
 function App() {
+  const [currentScreen, setCurrentScreen] = useState<"student" | "admin">("student");
   const { classes, loading, error, refreshClasses } = useClasses();
   const {
     studentId,
@@ -19,9 +22,26 @@ function App() {
     handleCancel,
     processingHoldId,
   } = useAdmission({ classes, refreshClasses })
+  const {
+    className,
+    setClassName,
+    totalSeats,
+    setTotalSeats,
+    creating,
+    successMessage,
+    errorMessage,
+    handleCreateClass,
+  } = useAdmin({ refreshClasses });
+
+  const toggleScreen = () => {
+    setCurrentScreen((previous) => previous === "student" ? "admin" : "student")
+  }
   return (
     <div className="min-h-screen bg-slate-50 text-slate-500">
-      <Navbar />
+      <Navbar 
+        currentScreen={currentScreen}
+        onToggle={toggleScreen}
+      />
 
       <main className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
         <div className="mb-8">
@@ -39,33 +59,49 @@ function App() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <StudentInformation 
-            studentId={studentId}
-            setStudentId={updateStudentId}
-          />
-          <ClassList 
-            classes={classes}
-            loading={loading}
-            error={error}
-            isValidStudentId={isValidStudentId}
-            applyingClassId={applyingClassId}
-            applicationMessage={applicationMessage}
-            applicationError={applicationError}
-            onApply={handleApply}
-          />
+        {currentScreen === "student" ? (
+          <>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <StudentInformation 
+                studentId={studentId}
+                setStudentId={updateStudentId}
+              />
 
-          <MyApplications 
-            applications={myApplications}
-            classes={classes}
-            loading={applicationsLoading}
-            isValidStudentId={isValidStudentId}
-            getRemainingTime={getRemainingTime}
-            handlePayment={handlePayment}
-            handleCancel={handleCancel}
-            processingHoldId={processingHoldId}
+              <ClassList 
+                classes={classes}
+                loading={loading}
+                error={error}
+                isValidStudentId={isValidStudentId}
+                applyingClassId={applyingClassId}
+                applicationMessage={applicationMessage}
+                applicationError={applicationError}
+                onApply={handleApply}
+              />
+
+              <MyApplications 
+                applications={myApplications}
+                classes={classes}
+                loading={applicationsLoading}
+                isValidStudentId={isValidStudentId}
+                getRemainingTime={getRemainingTime}
+                handlePayment={handlePayment}
+                handleCancel={handleCancel}
+                processingHoldId={processingHoldId}
+              />
+            </div>
+          </>
+        ) : (
+          <AdminPanel 
+            className={className}
+            setClassName={setClassName}
+            totalSeats={totalSeats}
+            setTotalSeats={setTotalSeats}
+            creating={creating}
+            successMessage={successMessage}
+            errorMessage={errorMessage}
+            onSubmit={handleCreateClass}
           />
-        </div>
+        )}
 
         <Footer />
       </main>

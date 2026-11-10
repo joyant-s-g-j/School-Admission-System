@@ -101,9 +101,9 @@ const ClassList = ({
         )}
 
         {!loading && !error && classes.length > 0 && (
-            <div>
+            <div className='grid md:grid-cols-2 gap-2'>
                 {classes.map((schoolClass) => (
-                    <ClassCard 
+                    <ClassCard
                         key={schoolClass.id}
                         schoolClass={schoolClass}
                         isValidStudentId={isValidStudentId}
