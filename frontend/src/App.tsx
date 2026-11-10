@@ -1,69 +1,20 @@
-import { useState } from "react";
-import { ClassList, Footer, Navbar, StudentInformation } from "./components";
+import { ClassList, Footer, MyApplications, Navbar, StudentInformation } from "./components";
 import { useClasses } from "./hooks/useClasses";
+import { useAdmission } from "./hooks/useAdmission";
 
 function App() {
   const { classes, loading, error, refreshClasses } = useClasses();
-  const [studentId, setStudentId] = useState("");
-  const [applyingClassId, setApplyingClassId] = useState<string | null>(null);
-  const [applicationMessage, setApplicationMessage] = useState("");
-  const [applicationError, setApplicationError] = useState("");
-
-  const isValidStudentId = /^[0-9]{17}$/.test(studentId);
-  const handleApply = async (classId: string) => {
-    if (!isValidStudentId) {
-      setApplicationError(
-        "Please enter a valid 17-digit Student ID."
-      );
-      setApplicationMessage("");
-      return;
-    }
-
-    const selectedClass = classes.find(
-      (schoolClass) => schoolClass.id === classId
-    );
-
-    if (!selectedClass || selectedClass.availableSeats <= 0) {
-      setApplicationError("No available seats in this class.");
-      setApplicationMessage("");
-      return;
-    }
-
-    setApplyingClassId(classId);
-    setApplicationError("");
-    setApplicationMessage("");
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/classes/${classId}/holds`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Student-Id": studentId,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || "Failed to apply for admission.");
-      }
-
-      setApplicationMessage("Your seat has been held successfully!");
-
-      // Refresh class seat counts
-      await refreshClasses();
-    } catch (err) {
-      setApplicationError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong."
-      );
-    } finally {
-      setApplyingClassId(null);
-    }
-  };
+  const {
+    studentId,
+    updateStudentId,
+    isValidStudentId,
+    applyingClassId,
+    applicationMessage,
+    applicationError,
+    myApplications,
+    applicationsLoading,
+    handleApply
+  } = useAdmission({ classes, refreshClasses })
   return (
     <div className="min-h-screen bg-slate-50 text-slate-500">
       <Navbar />
@@ -87,7 +38,7 @@ function App() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <StudentInformation 
             studentId={studentId}
-            setStudentId={setStudentId}
+            setStudentId={updateStudentId}
           />
           <ClassList 
             classes={classes}
@@ -98,6 +49,13 @@ function App() {
             applicationMessage={applicationMessage}
             applicationError={applicationError}
             onApply={handleApply}
+          />
+
+          <MyApplications 
+            applications={myApplications}
+            classes={classes}
+            loading={applicationsLoading}
+            isValidStudentId={isValidStudentId}
           />
         </div>
 
