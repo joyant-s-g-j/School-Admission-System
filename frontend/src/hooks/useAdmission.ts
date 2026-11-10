@@ -10,7 +10,7 @@ export function useAdmission({
   classes,
   refreshClasses,
 }: UseAdmissionProps) {
-  const [studentId, setStudentIdState] = useState("");
+  const [studentId, setStudentIdState] = useState(() => localStorage.getItem("studentId") ?? "");
   const [applyingClassId, setApplyingClassId] = useState<string | null>(null);
   const [applicationMessage, setApplicationMessage] = useState("");
   const [applicationError, setApplicationError] = useState("");
@@ -82,19 +82,30 @@ export function useAdmission({
   const updateStudentId = useCallback(
     (id: string) => {
       setStudentIdState(id);
+      if (id) {
+        localStorage.setItem("studentId", id);
+      } else {
+        localStorage.removeItem("studentId");
+      }
       setApplicationMessage("");
       setApplicationError("");
 
-      if (/^[0-9]{17}$/.test(id)) {
-        void fetchMyApplications(id);
-      } else {
-        requestId.current++;
+      requestId.current++;
         setMyApplications([]);
         setApplicationsLoading(false);
-      }
-    },
-    [fetchMyApplications]
-  );
+    },[]);
+
+  useEffect(() => {
+    if (!isValidStudentId) {
+        return;
+    }
+
+    const timeoutId = setTimeout(() => {
+        void fetchMyApplications(studentId);
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [studentId, isValidStudentId, fetchMyApplications]);
 
   const handleApply = useCallback(
     async (classId: string) => {
