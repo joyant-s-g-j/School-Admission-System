@@ -91,7 +91,7 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/joyant-s-g-j/School-Admission-System.git
-cd SchoolAdmission
+cd School-Admission-System
 ```
 
 Start the application:
